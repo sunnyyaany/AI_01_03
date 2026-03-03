@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>실버 모드 - AI 약사</title>
+    <!-- Google Fonts for Modern, Clear Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563EB;
+            --primary-dark: #1D4ED8;
+            --secondary: #FDE047;
+            --bg-color: #F8FAFC;
+            --text-main: #0F172A;
+            --text-muted: #64748B;
+            --success: #22C55E;
+            --danger: #EF4444;
+            --card-bg: #FFFFFF;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Pretendard', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #app-container {
+            width: 100%;
+            max-width: 480px;
+            height: 100vh;
+            height: 100dvh;
+            background: var(--card-bg);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(20px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            background: var(--card-bg);
+        }
+
+        .screen.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(0);
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            line-height: 1.3;
+            word-break: keep-all;
+        }
+
+        p.subtitle {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+            line-height: 1.5;
+            word-break: keep-all;
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 20px;
+            font-size: 1.5rem;
+            font-weight: 800;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s;
+            margin-bottom: 16px;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            box-shadow: 0 8px 16px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn-primary:active {
+            background-color: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            border: 2px solid #E2E8F0;
+        }
+
+        .btn-large {
+            padding: 28px 20px;
+            font-size: 1.75rem;
+        }
+
+        .spacer {
+            flex-grow: 1;
+        }
+
+        /* Camera / Upload Screen */
+        .camera-container {
+            width: 100%;
+            aspect-ratio: 3/4;
+            background-color: #000;
+            border-radius: 24px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #camera-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .fallback-text {
+            position: absolute;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            font-size: 1.2rem;
+        }
+
+        #file-upload {
+            display: none;
+        }
+
+        /* OCR Confirm */
+        .ocr-result-card {
+            background: var(--bg-color);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 2px solid #E2E8F0;
+        }
+
+        .ocr-field {
+            margin-bottom: 16px;
+        }
+        
+        .ocr-field:last-child {
+            margin-bottom: 0;
+        }
+
+        .ocr-label {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .ocr-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        /* Result & Audio */
+        .audio-controls {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .btn-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 8px 16px rgba(37, 99, 235, 0.2);
+        }
+
+        .result-text {
+            font-size: 1.4rem;
+            line-height: 1.6;
+            margin-bottom: 24px;
+            overflow-y: auto;
+            flex-grow: 1;
+            padding: 20px;
+            background: #FFFBEB;
+            border-radius: 20px;
+            border: 2px solid #FEF3C7;
+        }
+
+        .disclaimer {
+            font-size: 1rem;
+            color: var(--text-muted);
+            background: #F1F5F9;
+            padding: 16px;
+            border-radius: 12px;
+            margin-top: auto;
+            text-align: center;
+            word-break: keep-all;
+        }
+
+        /* Loading */
+        .loading-spinner {
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid var(--primary);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 24px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .center-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    
+    <!-- Screen 1: Start (UX Auto-play bypass) -->
+    <div id="screen-start" class="screen active center-content">
+        <h1>안녕하세요!<br>AI 약사입니다.</h1>
+        <p class="subtitle">약 봉투나 처방전을<br>사진으로 찍어주세요.</p>
+        <div class="spacer"></div>
+        <button class="btn btn-primary btn-large" onclick="navTo('screen-camera')">
+            <span style="font-size: 2.5rem; margin-right: 12px;">📷</span> 시작하기
+        </button>
+    </div>
+
+    <!-- Screen 2: Camera / Fallback -->
+    <div id="screen-camera" class="screen">
+        <h1>사진 촬영</h1>
+        <p class="subtitle" style="margin-bottom: 16px;">약 봉투의 글씨가<br>잘 보이게 찍어주세요.</p>
+        
+        <div class="camera-container" id="camera-container">
+            <video id="camera-feed" autoplay playsinline></video>
+            <div class="fallback-text" id="camera-fallback-msg" style="display:none;">
+                카메라를 켤 수 없습니다.<br>아래 버튼으로<br>사진을 올려주세요.
+            </div>
+        </div>
+
+        <div class="spacer"></div>
+        <button id="btn-take-pic" class="btn btn-primary btn-large" onclick="takePicture()">
+            📸 촬영하기
+        </button>
+        <button class="btn btn-secondary" onclick="document.getElementById('file-upload').click()">
+            📁 사진 앨범에서 선택
+        </button>
+        <input type="file" id="file-upload" accept="image/*" onchange="handleFileUpload(event)">
+        <button class="btn btn-secondary" style="border:none; margin-top:8px;" onclick="navTo('screen-start')">돌아가기</button>
+    </div>
+
+    <!-- Screen 3: Loading -->
+    <div id="screen-loading" class="screen center-content">
+        <div class="loading-spinner"></div>
+        <h1>글씨를<br>읽고 있습니다...</h1>
+        <p class="subtitle">잠시만 기다려주세요.</p>
+    </div>
+
+    <!-- Screen 4: OCR Confirm -->
+    <div id="screen-ocr-confirm" class="screen">
+        <h1>확인해주세요</h1>
+        <p class="subtitle">이 약이 맞나요?</p>
+        
+        <div class="ocr-result-card">
+            <div class="ocr-field">
+                <div class="ocr-label">약 이름</div>
+                <div class="ocr-value" id="ocr-name">타이레놀정 500mg</div>
+            </div>
+            <div class="ocr-field">
+                <div class="ocr-label">복용법</div>
+                <div class="ocr-value" id="ocr-dose">1일 3회, 식후 30분</div>
+            </div>
+        </div>
+
+        <div class="spacer"></div>
+        <button class="btn btn-primary btn-large" onclick="processRAG()">
+            ✅ 네, 맞아요
+        </button>
+        <button class="btn btn-secondary" onclick="navTo('screen-camera')">
+            ❌ 다시 찍을래요
+        </button>
+    </div>
+
+    <!-- Screen 5: RAG Result & Auto-play TTS -->
+    <div id="screen-result" class="screen">
+        <h1>복약 안내</h1>
+        
+        <div class="result-text" id="rag-answer">
+            타이레놀정 500mg은 하루 세 번, 식사 후에 드시는 것이 좋습니다. 통증을 줄여주고 열을 내리는 효과가 있습니다.
+        </div>
+        
+        <div style="display: flex; justify-content: center; gap: 24px; margin-bottom: 24px;">
+            <button class="btn-circle" id="btn-replay" onclick="replayAudio()">
+                🔊
+            </button>
+            <button class="btn-circle" style="background:#E2E8F0; color:var(--text-main);" onclick="stopAudio()">
+                ⏹️
+            </button>
+        </div>
+
+        <button class="btn btn-secondary" onclick="navTo('screen-start')">
+            처음으로 돌아가기
+        </button>
+
+        <div class="disclaimer">
+            본 안내는 AI가 작성한 것으로 참고용입니다. 정확한 진단은 의사나 약사와 상담하세요.
+        </div>
+    </div>
+
+</div>
+
+<!-- Audio Player for TTS -->
+<audio id="tts-player"></audio>
+
+<script>
+    // --- Navigation Logic ---
+    function navTo(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+        
+        if(screenId === 'screen-camera') {
+            initCamera();
+        } else {
+            stopCamera();
+        }
+
+        if(screenId !== 'screen-result') {
+            stopAudio();
+        }
+    }
+
+    // --- Media & Camera Fallback ---
+    let streamRef = null;
+
+    async function initCamera() {
+        const video = document.getElementById('camera-feed');
+        const fallbackMsg = document.getElementById('camera-fallback-msg');
+        const btnTakePic = document.getElementById('btn-take-pic');
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: 'environment' } 
+            });
+            video.srcObject = stream;
+            streamRef = stream;
+            video.style.display = 'block';
+            fallbackMsg.style.display = 'none';
+            btnTakePic.style.display = 'flex';
+        } catch (err) {
+            console.error('Camera init failed:', err);
+            video.style.display = 'none';
+            fallbackMsg.style.display = 'block';
+            btnTakePic.style.display = 'none';
+        }
+    }
+
+    function stopCamera() {
+        if(streamRef) {
+            streamRef.getTracks().forEach(track => track.stop());
+            streamRef = null;
+        }
+    }
+
+    // --- Action Handlers ---
+    function takePicture() {
+        // 실제 구현에서는 canvas로 video 캡쳐 -> blob 추출
+        simulateOCR();
+    }
+
+    function handleFileUpload(e) {
+        if(e.target.files.length > 0) {
+            simulateOCR();
+        }
+    }
+
+    // --- Simulation API Calls ---
+    function simulateOCR() {
+        navTo('screen-loading');
+        
+        // OCR 및 Vision 모의 호출 (실제 API가 없으므로 지연 후 화면 전환)
+        setTimeout(() => {
+            // Mock Data
+            document.getElementById('ocr-name').innerText = "타이레놀 8시간 이알 서방정";
+            document.getElementById('ocr-dose').innerText = "1일 3회, 3일분";
+            navTo('screen-ocr-confirm');
+        }, 2000);
+    }
+
+    function processRAG() {
+        navTo('screen-loading');
+
+        setTimeout(async () => {
+            const summaryText = "타이레놀 8시간 서방정은 열을 내리고 통증을 줄여주는 약입니다. 식사와 관계없이 하루 세 번 챙겨 드세요. 약을 쪼개거나 씹지 말고 통째로 물과 함께 삼키셔야 합니다.";
+            document.getElementById('rag-answer').innerText = summaryText;
+            
+            navTo('screen-result');
+            
+            // TTS 자동 재생 (Auto-play UX bypass는 첫 화면의 '시작하기' 버튼 클릭으로 이미 권한 획득됨)
+            await playTTS(summaryText);
+        }, 2000);
+    }
+
+    // --- TTS Logic ---
+    let currentAudioUrl = null;
+
+    async function playTTS(text) {
+        stopAudio(); // 기존 재생 중지
+
+        try {
+            // 실제 백엔드 연동 (/api/v1/tts/generate)
+            // 브라우저 네이티브 Fallback
+            // 여기서는 먼저 구현한 백엔드 API를 사용하도록 작성
+            const btnReplay = document.getElementById('btn-replay');
+            btnReplay.innerHTML = '⏳';
+            btnReplay.disabled = true;
+
+            const reqBody = { text: text, lang: "ko" };
+            
+            const response = await fetch('/api/v1/tts/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(reqBody)
+            });
+
+            if(!response.ok) throw new Error("TTS API Error");
+
+            const blob = await response.blob();
+            currentAudioUrl = URL.createObjectURL(blob);
+            
+            const player = document.getElementById('tts-player');
+            player.src = currentAudioUrl;
+            
+            player.onplay = () => {
+                btnReplay.innerHTML = '🔊';
+                btnReplay.disabled = false;
+            };
+
+            player.onended = () => {
+                btnReplay.innerHTML = '🔄';
+            };
+
+            await player.play();
+        } catch (err) {
+            console.error("Backend TTS Failed, falling back to Web Speech API", err);
+            
+            // Web Speech API Fallback
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ko-KR';
+                utterance.rate = 0.9; // 실버 모드: 살짝 느리게
+                
+                utterance.onend = () => {
+                    document.getElementById('btn-replay').innerHTML = '🔄';
+                    document.getElementById('btn-replay').disabled = false;
+                };
+
+                window.speechSynthesis.speak(utterance);
+                document.getElementById('btn-replay').innerHTML = '🔊';
+            }
+        }
+    }
+
+    function replayAudio() {
+        const player = document.getElementById('tts-player');
+        if(currentAudioUrl) {
+            player.currentTime = 0;
+            player.play().catch(e => console.error(e));
+        } else {
+            // Web Speech 다시 재생
+            playTTS(document.getElementById('rag-answer').innerText);
+        }
+    }
+
+    function stopAudio() {
+        const player = document.getElementById('tts-player');
+        if(player) {
+            player.pause();
+            player.currentTime = 0;
+        }
+        if('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+        }
+        document.getElementById('btn-replay').innerHTML = '▶️';
+    }
+
+</script>
+</body>
+</html>

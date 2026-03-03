@@ -12,11 +12,17 @@ wheels/\
 .coverage\
 *.coverage\
 .coverage.*\
-요약(기술문서등)/.claude/\
+요약(기술문서등)/.claude/
+.claude/
 envs/
 
-# Claude Prompts
-claude_prompts/
+# Generated data (large files)
+data/knowledge_base.json
+data/faiss_index.bin
+data/faiss_meta.json
+data/_checkpoint.json
+data/benchmark_results.json
+nul
 
 # Claude Prompts
 claude_prompts/

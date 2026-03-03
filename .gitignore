@@ -12,3 +12,6 @@ wheels/
 .coverage
 *.coverage
 .coverage.*
+*.pt
+tmp_uploads/
+bus.jpg

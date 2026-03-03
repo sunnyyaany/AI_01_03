@@ -14,3 +14,9 @@ wheels/\
 .coverage.*\
 요약(기술문서등)/.claude/\
 envs/
+
+# Claude Prompts
+claude_prompts/
+
+# Claude Prompts
+claude_prompts/
